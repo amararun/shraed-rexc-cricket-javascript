@@ -1,0 +1,2237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chat & Analysis</title>
+    <style>
+        /* Base styles */
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f8fafc;
+        }
+        
+        /* Header styles */
+        .header {
+            background: linear-gradient(to right, #4338ca, #312e81);
+            color: white;
+            padding: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .header-title {
+            font-size: 1.25rem;
+            font-weight: 500;
+            margin: 0;
+        }
+        
+        .header-divider {
+            height: 1.25rem;
+            width: 1px;
+            background-color: #6366f1;
+            margin: 0 0.rem;
+        }
+        
+        /* Main container styles */
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            padding: 1rem;
+            max-width: 1800px;
+            margin: 0 auto;
+            margin-top: 0.5rem;
+            margin-bottom: 40px;
+            height: calc(100vh - 140px);
+            overflow: hidden;
+        }
+        
+        /* Chat box styles */
+        .chat-box {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            height: calc(100% - 65px);
+            min-height: 0;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        
+        .chat-header {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            font-weight: 500;
+        }
+        
+        .messages-container {
+            position: relative;
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.8rem;
+            max-height: calc(100% - 60px);
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 #f1f5f9;
+        }
+        
+        /* Add these styles for WebKit browsers (Chrome, Safari, etc.) */
+        .messages-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .messages-container::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+
+        .messages-container::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 4px;
+            border: 2px solid #f1f5f9;
+        }
+
+        .messages-container::-webkit-scrollbar-thumb:hover {
+            background-color: #94a3b8;
+        }
+        
+        .message {
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            max-width: 80%;
+        }
+        
+        .message.user {
+            background-color: #eef2ff;
+            margin-left: auto;
+        }
+        
+        .message.assistant {
+            background-color: transparent;
+            padding: 0;
+        }
+        
+        .chat-input-container {
+            padding: 0.6rem;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .chat-input-wrapper {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .chat-input {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.375rem;
+            resize: none;
+            min-height: 40px;
+            max-height: 120px;
+        }
+        
+        .send-button {
+            padding: 0.5rem 1rem;
+            background-color: #4f46e5;
+            color: white;
+            border: none;
+            border-radius: 0.375rem;
+            cursor: pointer;
+        }
+        
+        .send-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* Chart container styles */
+        .chart-container {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            height: 350px;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 0;
+        }
+        
+        .chart-header {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            font-weight: 500;
+        }
+        
+        .chart-content {
+            flex: 1;
+            position: relative;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: auto;
+            min-height: 0; /* Important for flex child scrolling */
+            height: calc(100% - 50px);
+        }
+        
+        .chart-image-container {
+            position: relative;
+            background: white;
+            border-radius: 0.5rem;
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .chart-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        
+        .chart-image-container.active {
+            display: block; /* Show only active */
+        }
+
+        /* Navigation arrows */
+        .chart-nav-button {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #e5e7eb;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: none; /* Hidden by default */
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 100;
+            font-size: 20px;
+            color: #4b5563;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .chart-nav-button:hover {
+            background: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .chart-nav-prev {
+            left: 1rem;
+        }
+
+        .chart-nav-next {
+            right: 1rem;
+        }
+
+        /* Chart counter */
+        .chart-counter {
+            position: absolute;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.875rem;
+            color: #4b5563;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            z-index: 90;
+            display: none; /* Hidden by default */
+        }
+
+        /* Add default chart state */
+        .chart-content-empty {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+
+        .chart-image-container {
+            position: relative;
+            background: white;
+            border-radius: 0.5rem;
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 800px;
+            max-height: 600px;
+            aspect-ratio: 4/3;
+            display: none;
+        }
+
+        .chart-content {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            width: 100%;
+        }
+
+        .chart-nav-button {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+            display: none;
+        }
+
+        /* Markdown styles */
+        .message-content {
+            line-height: 1.6;
+            color: #2d3748;  /* Darker base text color */
+        }
+        
+        .message-content p {
+            margin: 0 0 1em 0;
+        }
+        
+        .message-content p:last-child {
+            margin-bottom: 0;
+        }
+        
+        .message-content pre {
+            background: #f8fafc;  /* Lighter blue-gray background */
+            padding: 1em;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 0.5em 0;
+            border: 1px solid #e2e8f0;  /* Subtle border */
+        }
+        
+        .message-content code {
+            background: #edf2f7;  /* Light blue-gray background */
+            padding: 0.2em 0.4em;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: #4a5568;  /* Darker gray for code */
+        }
+        
+        .message-content table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1em 0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+        
+        .message-content th,
+        .message-content td {
+            border: 1px solid #e2e8f0;  /* Lighter blue-gray border */
+            padding: 0.75em;
+            text-align: left;
+        }
+        
+        .message-content th {
+            background: #f0f5ff;  /* Very light blue background */
+            color: #1a365d;  /* Darker blue for headers */
+            font-weight: 500;
+        }
+        
+        .message-content tr:nth-child(even) {
+            background: #fafbff;  /* Extremely subtle blue for alternating rows */
+        }
+        
+        .message-content ul,
+        .message-content ol {
+            margin: 0.5em 0;
+            padding-left: 1.5em;
+        }
+        
+        .message-content li {
+            margin: 0.3em 0;
+            color: #2d3748;
+        }
+        
+        .message-content blockquote {
+            margin: 0.5em 0;
+            padding: 0.5em 1em;
+            border-left: 3px solid #4299e1;  /* Medium blue accent */
+            background: #ebf8ff;  /* Very light blue background */
+            color: #2c5282;  /* Darker blue for quoted text */
+        }
+        
+        .message-content h1,
+        .message-content h2,
+        .message-content h3,
+        .message-content h4,
+        .message-content h5,
+        .message-content h6 {
+            color: #2b4c7e;  /* Professional blue for headings */
+            margin: 1em 0 0.5em 0;
+        }
+        
+        .message-content a {
+            color: #3182ce;  /* Bright blue for links */
+            text-decoration: none;
+        }
+        
+        .message-content a:hover {
+            text-decoration: underline;
+        }
+
+        /* Add this new simple widget style */
+        .widget-wrapper {
+            position: relative;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 8px 20px;
+            height: 50px;
+            min-height: 50px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        /* Add style for the title in widget box */
+        .widget-title {
+            font-weight: 600;
+            color: #4338ca;
+            font-size: 1.1rem;
+            white-space: nowrap;
+            letter-spacing: 0.01em;
+            flex-shrink: 0;
+        }
+
+        /* Add a wrapper for the widget to control its position */
+        .widget-button-wrapper {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Update widget element styles */
+        elevenlabs-convai {
+            position: relative !important;
+            bottom: auto !important;
+            right: auto !important;
+            transform: scale(0.9);
+            margin: 0 !important;
+            width: auto !important;
+            height: 100% !important;
+            flex-grow: 0;
+        }
+
+        /* Force any iframes within the widget to fit */
+        elevenlabs-convai iframe {
+            position: relative !important;
+            width: 100% !important;
+            height: 100% !important;
+            border: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        /* Add new styles for the chat section wrapper */
+        .chat-section {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            height: calc(100vh - 140px);
+            overflow: hidden;
+        }
+
+        /* Adjust chat-box styles */
+        .chat-box {
+            height: calc(100% - 65px);
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Add responsive styles */
+        @media screen and (max-width: 768px) {
+            /* Update main container styles */
+            .main-container {
+                grid-template-columns: 1fr;
+                height: calc(100vh - 120px); /* Adjust for header height */
+                padding: 0.25rem;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden; /* Prevent scrolling of main container */
+            }
+
+            /* Enhanced Mobile tabs styling */
+            .mobile-tabs {
+                position: sticky;
+                top: 0;
+                z-index: 10;
+                margin-bottom: 0.25rem;
+                flex-shrink: 0;
+                display: flex;
+                background: white;
+                padding: 0.5rem;
+                border-radius: 12px;
+                gap: 0.5rem;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            }
+
+            .tab-button {
+                flex: 1;
+                padding: 0.625rem 1rem;
+                border: none;
+                background: #f3f4f6;
+                color: #6b7280;
+                font-weight: 500;
+                font-size: 0.95rem;
+                border-radius: 8px;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.5rem;
+            }
+
+            /* Add icons to tabs */
+            .tab-button[data-tab="chat"]::before {
+                content: "💬";
+                font-size: 1.1rem;
+            }
+
+            .tab-button[data-tab="charts"]::before {
+                content: "📊";
+                font-size: 1.1rem;
+            }
+
+            .tab-button:hover {
+                background: #f0f1f5;
+            }
+
+            .tab-button.active {
+                background: #4338ca;
+                color: white;
+                box-shadow: 0 2px 4px rgba(67, 56, 202, 0.2);
+                transform: translateY(-1px);
+            }
+
+            /* Subtle animation for tab switching */
+            .chat-section,
+            .chart-container {
+                transition: opacity 0.2s ease;
+                opacity: 0;
+                display: none;
+            }
+
+            .chat-section.active,
+            .chart-container.active {
+                display: flex;
+                opacity: 1;
+            }
+
+            /* Section visibility and scroll control */
+            .chat-section,
+            .chart-container,
+            .document-section {
+                display: none;
+                width: 100%;
+                height: calc(100vh - 180px);
+                overflow: hidden;
+                flex-direction: column;
+            }
+
+            .chat-section.active,
+            .chart-container.active,
+            .document-section.active {
+                display: flex;
+            }
+
+            /* Document section mobile adjustments */
+            .document-section {
+                margin-top: 0;
+                height: 100%; /* Take full height in mobile */
+            }
+
+            /* Update tab button styles */
+            .tab-button {
+                flex: 1;
+                padding: 0.625rem 0.5rem;
+                font-size: 0.9rem;
+            }
+
+            /* Add icons to tabs */
+            .tab-button[data-tab="chat"]::before {
+                content: "💬";
+            }
+
+            .tab-button[data-tab="charts"]::before {
+                content: "📊";
+            }
+
+            .tab-button[data-tab="docs"]::before {
+                content: "📑";
+            }
+
+            .tab-button::before {
+                font-size: 1.2rem;
+                margin-right: 4px;
+            }
+
+            /* Chat section specific adjustments */
+            .chat-box {
+                flex: 1;
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .messages-container {
+                flex: 1;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+            }
+
+            /* Chart container specific adjustments */
+            .chart-content {
+                flex: 1;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            /* Ensure input area stays at bottom */
+            .chat-input-container {
+                flex-shrink: 0;
+                background: white;
+                border-top: 1px solid #e5e7eb;
+                padding: 8px;
+                position: sticky;
+                bottom: 0;
+            }
+        }
+
+        /* Update the expand button styles */
+        .expand-button {
+            background: #f0f4ff; /* Lighter blue-tinted background */
+            border: 1px solid #e0e7ff;
+            border-radius: 6px;
+            padding: 4px 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.875rem;
+            color: #4338ca; /* Indigo color matching your theme */
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+        .expand-button:hover {
+            background: #e0e7ff;
+            border-color: #c7d2fe;
+            box-shadow: 0 1px 3px rgba(67, 56, 202, 0.1);
+        }
+
+        .expand-button svg {
+            width: 16px;
+            height: 16px;
+            stroke: #4338ca; /* Match the text color */
+        }
+
+        /* Update the messages expand button background */
+        .messages-expand-button {
+            background: rgba(240, 244, 255, 0.95); /* Slightly transparent version */
+        }
+
+        .messages-expand-button:hover {
+            background: rgba(224, 231, 255, 0.95);
+        }
+
+        /* Position the expand button in messages container */
+        .messages-expand-button {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            z-index: 10;
+            background: rgba(243, 244, 246, 0.9);
+        }
+
+        /* Position the expand button in chart header */
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Add styles for expanded state */
+        .main-container.chat-expanded .chat-section {
+            grid-column: 1 / -1;
+        }
+
+        .main-container.chat-expanded .chart-container {
+            display: none;
+        }
+
+        .main-container.chart-expanded .chart-container {
+            grid-column: 1 / -1;
+        }
+
+        .main-container.chart-expanded .chat-section {
+            display: none;
+        }
+
+        /* Adjust for mobile */
+        @media screen and (max-width: 768px) {
+            .expand-button {
+                display: none; /* Hide expand buttons on mobile */
+            }
+        }
+
+        /* Update the chart content styles for expanded state */
+        .main-container.chart-expanded .chart-content {
+            height: 100%;
+            max-height: none;
+            padding: 1.5rem;
+        }
+
+        .main-container.chart-expanded .chart-image-container {
+            max-width: 100%;
+            width: 100%;
+            height: 100%;
+            max-height: none;
+            aspect-ratio: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .main-container.chart-expanded .chart-image {
+            width: auto;
+            height: auto;
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        /* Base chart styles */
+        .chart-content {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            height: 100%;
+        }
+
+        .chart-image-container {
+            position: relative;
+            background: white;
+            border-radius: 0.5rem;
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 800px;
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .chart-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            transition: all 0.3s ease;
+        }
+
+        /* Expanded state styles */
+        .main-container.chart-expanded .chart-container {
+            grid-column: 1 / -1;
+            height: calc(100vh - 120px); /* Adjust based on your header height */
+        }
+
+        .main-container.chart-expanded .chart-content {
+            padding: 1.5rem;
+        }
+
+        .main-container.chart-expanded .chart-image-container {
+            height: calc(100% - 2rem); /* Account for padding */
+        }
+
+        /* Add these footer styles to your existing CSS */
+        .footer {
+            background: linear-gradient(to right, #312e81, #4338ca);
+            color: white;
+            padding: 0.75rem;
+            text-align: center;
+            font-size: 1.0rem;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+
+        .footer a {
+            color: white;
+            text-decoration: none;
+            border-bottom: 1px dotted rgba(255,255,255,0.5);
+        }
+
+        .footer a:hover {
+            border-bottom: 1px solid white;
+        }
+
+        /* Update header styles for both chat and chart boxes */
+        .chart-header, .chat-header, .widget-wrapper {
+            background: #f0f4ff; /* Light blue background */
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #e0e7ff;
+            font-weight: 500;
+            color: #4338ca; /* Indigo color to match theme */
+        }
+
+        /* Specific styles for widget wrapper to maintain its height */
+        .widget-wrapper {
+            height: 50px;
+            min-height: 50px;
+            padding: 8px 20px;
+        }
+
+        /* Keep the chart header's flex layout for the expand button */
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Update the header title colors */
+        .widget-title, .chart-header span {
+            color: #4338ca;
+            font-weight: 600;
+        }
+
+        /* Update the chart header styles with media query */
+        .chart-header span {
+            font-size: 1.1rem; /* Larger font for web view */
+            font-weight: 600;
+            color: #4338ca;
+        }
+
+        /* Keep original size for mobile */
+        @media screen and (max-width: 768px) {
+            .chart-header span {
+                font-size: 1rem; /* Original size for mobile */
+            }
+        }
+
+        /* Update document section styles */
+        .document-section {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            margin-top: 0;
+            overflow: hidden;
+            height: 280px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .document-header {
+            padding: 10px;
+            background-color: #f0f4ff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .document-title {
+            font-weight: 600;
+            color: #4338ca;
+        }
+
+        .document-controls {
+            display: flex;
+            align-items: center;
+        }
+
+        .document-type-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .doc-type-button {
+            padding: 5px 10px;
+            border: none;
+            background-color: #f3f4f6;
+            color: #6b7280;
+            font-weight: 500;
+            font-size: 0.9rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .doc-type-button.active {
+            background-color: #4338ca;
+            color: white;
+        }
+
+        .control-button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            margin-left: 10px;
+        }
+
+        .refresh-button {
+            color: #4338ca;
+        }
+
+        .maximize-button {
+            color: #4338ca;
+        }
+
+        .collapse-button {
+            color: #4338ca;
+        }
+
+        .document-content {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            height: calc(100% - 50px);
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1001;
+        }
+
+        .loading-overlay.hidden {
+            display: none;
+        }
+
+        #documentFrame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            overflow-y: auto;
+        }
+
+        /* Ensure chat section takes full height */
+        .chat-section {
+            grid-row: span 2;
+        }
+
+        /* Update mobile styles */
+        @media screen and (max-width: 768px) {
+            /* Update tab button styles */
+            .tab-button {
+                flex: 1;
+                padding: 0.625rem 0.5rem;
+                font-size: 0.9rem;
+            }
+
+            /* Add icon for docs tab */
+            .tab-button[data-tab="docs"]::before {
+                content: "📄";
+                font-size: 1.1rem;
+            }
+
+            /* Update section visibility */
+            .chat-section,
+            .chart-container,
+            .document-section {
+                display: none;
+                width: 100%;
+                height: calc(100vh - 180px);
+                overflow: hidden;
+                flex-direction: column;
+            }
+
+            .chat-section.active,
+            .chart-container.active,
+            .document-section.active {
+                display: flex;
+            }
+
+            /* Document section mobile adjustments */
+            .document-section {
+                margin-top: 0;
+                height: 100%; /* Take full height in mobile */
+            }
+        }
+
+        /* Update the tab button icons */
+        .tab-button[data-tab="chat"]::before {
+            content: "💬"; /* Replaced with speech bubble emoji */
+        }
+
+        .tab-button[data-tab="charts"]::before {
+            content: "📊"; /* Keep existing chart emoji */
+        }
+
+        .tab-button[data-tab="docs"]::before {
+            content: "📑"; /* Replaced with colorful document emoji */
+        }
+
+        /* Adjust the icon sizing and spacing */
+        .tab-button::before {
+            font-size: 1.2rem;
+            margin-right: 4px;
+        }
+
+        /* Add these styles to your existing CSS */
+        .sample-data-section {
+            padding: 2rem 1rem;
+            margin-bottom: 60px; /* Account for footer */
+        }
+
+        .sample-data-section h2 {
+            color: #4338ca;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            background: white;
+        }
+
+        .sample-data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+            white-space: nowrap;
+        }
+
+        .sample-data-table th {
+            background: #f0f4ff;
+            color: #4338ca;
+            font-weight: 600;
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 2px solid #e0e7ff;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .sample-data-table td {
+            padding: 8px 16px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .sample-data-table tbody tr:hover {
+            background-color: #f8fafc;
+        }
+
+        /* Responsive adjustments */
+        @media screen and (max-width: 768px) {
+            .sample-data-section {
+                padding: 1rem 0.5rem;
+            }
+
+            .sample-data-table {
+                font-size: 0.75rem;
+            }
+
+            .sample-data-table th,
+            .sample-data-table td {
+                padding: 6px 12px;
+            }
+        }
+    </style>
+
+    <!-- Add marked library for markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Add DOMPurify for sanitization -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <h1 class="header-title">C-REX Cricket</h1>
+            <div class="header-divider"></div>
+            <span class="header-subtitle">
+                ODI Cricket | ~2600 Matches| 2003 - Dec '24.| Ball by Ball- 1.5M Rows. 200MB. PostGreSQL
+            </span>
+        </div>
+    </header>
+
+    <!-- Main content -->
+    <div class="main-container">
+        <!-- Mobile tabs should be the first element inside main-container -->
+        <div class="mobile-tabs" style="display: none;">
+            <button class="tab-button active" data-tab="chat">Chat</button>
+            <button class="tab-button" data-tab="charts">Charts</button>
+            <button class="tab-button" data-tab="docs">Docs</button>
+        </div>
+        
+        <!-- Chat section with widget -->
+        <div class="chat-section">
+            <!-- Widget above chat with integrated title -->
+            <div class="widget-wrapper">
+                <span class="widget-title">AI Chat</span>
+                <div class="widget-button-wrapper">
+                    <elevenlabs-convai 
+                        agent-id="OHD9JQ3OoinJByncSRkS"
+                        style="all: unset; width: auto; height: 100%;"
+                    ></elevenlabs-convai>
+                </div>
+            </div>
+            
+            <!-- Chat box without the header -->
+            <div class="chat-box">
+                <div class="messages-container" id="messages">
+                    <button class="expand-button messages-expand-button" id="chatExpandButton">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+                        </svg>
+                        Expand
+                    </button>
+                    <!-- Messages will be inserted here -->
+                </div>
+                
+                <div class="chat-input-container">
+                    <div class="chat-input-wrapper">
+                        <textarea 
+                            id="chatInput" 
+                            class="chat-input" 
+                            placeholder="Type your message..."
+                            rows="1"
+                        ></textarea>
+                        <button id="sendButton" class="send-button">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart section -->
+        <div class="chart-container">
+            <div class="chart-header">
+                <span>Charts</span>
+                <button class="expand-button" id="chartExpandButton">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+                    </svg>
+                    Expand
+                </button>
+            </div>
+            <div class="chart-content" id="chartContent">
+                <button class="chart-nav-button chart-nav-prev">←</button>
+                <button class="chart-nav-button chart-nav-next">→</button>
+                <div class="chart-counter">0 / 0</div>
+                <div class="chart-content-empty">No charts generated yet</div>
+            </div>
+        </div>
+
+        <!-- Add this after the chart container div and before the closing main-container div -->
+        <div class="document-section">
+            <div class="document-header">
+                <span class="document-title">Docs</span>
+                <div class="document-controls">
+                    <div class="document-type-buttons">
+                        <button class="doc-type-button active" data-type="excel">Excel</button>
+                        <button class="doc-type-button" data-type="google">Google</button>
+                        <button class="doc-type-button" data-type="docs">Docs</button>
+                    </div>
+                    <button class="control-button refresh-button" title="Refresh">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/></svg>
+                    </button>
+                    <button class="control-button maximize-button" title="Maximize">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+                    </button>
+                    <button class="control-button collapse-button" title="Collapse">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="document-content">
+                <div class="loading-overlay hidden">
+                    <span>Refreshing...</span>
+                </div>
+                <iframe id="documentFrame" frameborder="0" sandbox="allow-scripts allow-same-origin allow-popups allow-forms"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Move these variables outside of DOMContentLoaded to make them truly global
+        let currentChartIndex = 0;
+        const chartStorage = {
+            items: [],
+            add: function(imageUrl) {
+                this.items.push(imageUrl);
+                return this.items.length - 1;
+            },
+            get: function(index) {
+                return this.items[index];
+            },
+            count: function() {
+                return this.items.length;
+            }
+        };
+
+        // Simplified navigation function
+        function navigateCharts(direction) {
+            console.log('Navigation clicked:', direction);
+            if (chartStorage.count() <= 1) return;
+            
+            currentChartIndex = (currentChartIndex + direction + chartStorage.count()) % chartStorage.count();
+            console.log('New index:', currentChartIndex);
+            
+            // Get all containers and update their visibility
+            const containers = document.querySelectorAll('.chart-image-container');
+            containers.forEach((container, index) => {
+                container.style.display = index === currentChartIndex ? 'block' : 'none';
+            });
+            
+            // Update the counter
+            const counter = document.querySelector('.chart-counter');
+            counter.textContent = `${currentChartIndex + 1} / ${chartStorage.count()}`;
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const messagesContainer = document.getElementById('messages');
+            const chatInput = document.getElementById('chatInput');
+            const sendButton = document.getElementById('sendButton');
+            let isLoading = false;
+
+            // Generate random session ID
+            function generateSessionId(length = 8) {
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+                let result = '';
+                for (let i = 0; i < length; i++) {
+                    result += chars.charAt(Math.floor(Math.random() * chars.length));
+                }
+                return result;
+            }
+
+            // Generate session ID once when page loads
+            const sessionId = generateSessionId();
+            console.log('Generated Session ID:', sessionId);
+
+            // Auto-resize textarea
+            chatInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+            });
+
+            // Add message to chat
+            function addMessage(content, role) {
+                console.log('Message received:', { content, role });
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${role}`;
+                
+                // Create a container for the message content
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'message-content';
+                
+                // Parse markdown and sanitize the HTML
+                const parsedContent = marked.parse(content, {
+                    gfm: true, // GitHub Flavored Markdown
+                    breaks: true, // Convert \n to <br>
+                    tables: true, // Enable tables
+                });
+                
+                // Sanitize the HTML to prevent XSS
+                const sanitizedContent = DOMPurify.sanitize(parsedContent, {
+                    ALLOWED_TAGS: [
+                        'p', 'br', 'strong', 'em', 'code', 'pre', 'table', 'thead', 'tbody',
+                        'tr', 'th', 'td', 'ul', 'ol', 'li', 'blockquote', 'h1', 'h2', 'h3',
+                        'h4', 'h5', 'h6', 'a', 'img'
+                    ],
+                    ALLOWED_ATTR: ['href', 'src', 'alt', 'title'],
+                });
+                
+                contentDiv.innerHTML = sanitizedContent;
+                messageDiv.appendChild(contentDiv);
+                messagesContainer.appendChild(messageDiv);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+
+            // Handle message sending
+            async function sendMessage() {
+                if (isLoading || !chatInput.value.trim()) return;
+
+                // Add user message
+                addMessage(chatInput.value, 'user');
+                const userMessage = chatInput.value;
+                chatInput.value = '';
+                chatInput.style.height = '40px';
+
+                // Show loading state
+                isLoading = true;
+                sendButton.disabled = true;
+
+                try {
+                    const chatflowId = '5e61fc5e-a2d9-410d-b1a4-1519fa0c3b4d';
+                    const baseUrl = 'https://flowise-coolify.hosting.tigzig.com';
+                    
+                    const response = await fetch(`${baseUrl}/api/v1/prediction/${chatflowId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ 
+                            question: userMessage,
+                            overrideConfig: {
+                                sessionId: sessionId
+                            }
+                        })
+                    });
+
+                    if (!response.ok) throw new Error('API call failed');
+
+                    const data = await response.json();
+                    console.log('Full API Response:', data);
+                    
+                    // Add assistant response
+                    addMessage(data.text || data.message, 'assistant');
+
+                    // Check for artifacts in the response
+                    if (data.artifacts && data.artifacts.length > 0) {
+                        console.log('Found artifacts in response with chatMessageId:', data.chatMessageId);
+                        const imageArtifact = data.artifacts.find(artifact => 
+                            artifact.type === 'png' || artifact.type === 'gif'
+                        );
+                        
+                        if (imageArtifact && typeof imageArtifact.data === 'string') {
+                            if (imageArtifact.data.startsWith('FILE-STORAGE::')) {
+                                const fileName = imageArtifact.data.replace('FILE-STORAGE::', '');
+                                const imageUrl = `${baseUrl}/api/v1/get-upload-file?chatflowId=${chatflowId}&chatId=${data.chatId}&fileName=${fileName}`;
+                                console.log('Using chatId for URL:', data.chatId);
+                                console.log('Attempting to load image from:', imageUrl);
+                                
+                                // Use the carousel addChart function
+                                addChart(imageUrl);
+                            }
+                        }
+                    }
+
+                } catch (error) {
+                    console.error('Error:', error);
+                    addMessage('Sorry, I encountered an error. Please try again.', 'assistant');
+                } finally {
+                    isLoading = false;
+                    sendButton.disabled = false;
+                }
+            }
+
+            // Event listeners
+            sendButton.addEventListener('click', sendMessage);
+            chatInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            // Update the chart event listener
+            window.addEventListener('newChart', function(event) {
+                console.log('Chart event received:', event.detail);  // Debug log
+                if (event.detail && event.detail.url) {
+                    addChart(event.detail.url);
+                }
+            });
+
+            // Update the addChart function
+            function addChart(imageUrl) {
+                const chartContent = document.getElementById('chartContent');
+                const emptyState = chartContent.querySelector('.chart-content-empty');
+                if (emptyState) {
+                    emptyState.remove();
+                }
+
+                // Create new chart container
+                const chartContainer = document.createElement('div');
+                chartContainer.className = 'chart-image-container';
+                
+                const chartImg = document.createElement('img');
+                chartImg.className = 'chart-image';
+                chartImg.alt = 'Generated Chart';
+                chartImg.src = imageUrl;
+                
+                chartContainer.appendChild(chartImg);
+                chartContent.appendChild(chartContainer);
+                
+                // Add to storage
+                currentChartIndex = chartStorage.add(imageUrl);
+                
+                // Show/hide navigation buttons based on number of charts
+                const prevBtn = document.querySelector('.chart-nav-prev');
+                const nextBtn = document.querySelector('.chart-nav-next');
+                const counter = document.querySelector('.chart-counter');
+                
+                if (chartStorage.count() > 1) {
+                    prevBtn.style.display = 'flex';
+                    nextBtn.style.display = 'flex';
+                    counter.style.display = 'block';
+                }
+                
+                // Update counter
+                counter.textContent = `${currentChartIndex + 1} / ${chartStorage.count()}`;
+                
+                // Hide all containers except the current one
+                const containers = document.querySelectorAll('.chart-image-container');
+                containers.forEach((container, index) => {
+                    container.style.display = index === currentChartIndex ? 'block' : 'none';
+                });
+                
+                console.log('Chart added:', { 
+                    totalCharts: chartStorage.count(), 
+                    currentIndex: currentChartIndex,
+                    allCharts: chartStorage.items 
+                });
+            }
+
+            // Add event listeners for navigation buttons
+            const prevButton = document.querySelector('.chart-nav-prev');
+            const nextButton = document.querySelector('.chart-nav-next');
+            
+            prevButton.addEventListener('click', () => {
+                console.log('Prev button clicked');
+                navigateCharts(-1);
+            });
+            
+            nextButton.addEventListener('click', () => {
+                console.log('Next button clicked');
+                navigateCharts(1);
+            });
+
+            // Add this to your DOMContentLoaded event listener
+            function initializeResponsiveLayout() {
+                const tabsContainer = document.querySelector('.mobile-tabs');
+                const tabButtons = document.querySelectorAll('.tab-button');
+                const chatSection = document.querySelector('.chat-section');
+                const chartContainer = document.querySelector('.chart-container');
+                const documentSection = document.querySelector('.document-section');
+
+                function updateLayout() {
+                    if (window.innerWidth <= 768) {
+                        tabsContainer.style.display = 'flex';
+                        // Show chat section by default
+                        chatSection.classList.add('active');
+                        chartContainer.classList.remove('active');
+                        documentSection.classList.remove('active');
+                    } else {
+                        tabsContainer.style.display = 'none';
+                        // Reset classes for desktop view
+                        chatSection.classList.remove('active');
+                        chartContainer.classList.remove('active');
+                        documentSection.classList.remove('active');
+                    }
+                }
+
+                // Initialize tabs
+                tabButtons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        // Remove active class from all buttons
+                        tabButtons.forEach(btn => btn.classList.remove('active'));
+                        button.classList.add('active');
+
+                        // Hide all sections
+                        chatSection.classList.remove('active');
+                        chartContainer.classList.remove('active');
+                        documentSection.classList.remove('active');
+
+                        // Show selected section
+                        switch(button.dataset.tab) {
+                            case 'chat':
+                                chatSection.classList.add('active');
+                                break;
+                            case 'charts':
+                                chartContainer.classList.add('active');
+                                break;
+                            case 'docs':
+                                documentSection.classList.add('active');
+                                break;
+                        }
+                    });
+                });
+
+                window.addEventListener('resize', updateLayout);
+                updateLayout();
+            }
+
+            // Add this line inside your DOMContentLoaded listener
+            initializeResponsiveLayout();
+
+            // Add this to your existing JavaScript, inside the DOMContentLoaded event listener
+            const chatExpandButton = document.getElementById('chatExpandButton');
+            const chartExpandButton = document.getElementById('chartExpandButton');
+            const mainContainer = document.querySelector('.main-container');
+
+            chatExpandButton.addEventListener('click', () => {
+                const isExpanded = mainContainer.classList.contains('chat-expanded');
+                mainContainer.classList.remove('chart-expanded');
+                
+                if (isExpanded) {
+                    mainContainer.classList.remove('chat-expanded');
+                    chatExpandButton.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+                        </svg>
+                        Expand
+                    `;
+                } else {
+                    mainContainer.classList.add('chat-expanded');
+                    chatExpandButton.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5M15 15l5.25 5.25"/>
+                        </svg>
+                        Collapse
+                    `;
+                }
+            });
+
+            chartExpandButton.addEventListener('click', () => {
+                const isExpanded = mainContainer.classList.contains('chart-expanded');
+                mainContainer.classList.remove('chat-expanded');
+                
+                if (isExpanded) {
+                    mainContainer.classList.remove('chart-expanded');
+                    chartExpandButton.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+                        </svg>
+                        Expand
+                    `;
+                } else {
+                    mainContainer.classList.add('chart-expanded');
+                    chartExpandButton.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5M15 15l5.25 5.25"/>
+                        </svg>
+                        Collapse
+                    `;
+                }
+            });
+
+            const DOCUMENT_URLS = {
+                excel: {
+                    view: 'https://harolikar-my.sharepoint.com/personal/amar_harolikar_com/_layouts/15/Doc.aspx?sourcedoc={371a2aba-3da4-4966-8d5a-e02eb2038845}&action=embedview&wdAllowInteractivity=False&wdHideGridlines=True&wdHideHeaders=True&wdDownloadButton=True&wdInConfigurator=True&wdInConfigurator=True',
+                    edit: 'https://harolikar-my.sharepoint.com/personal/amar_harolikar_com/_layouts/15/Doc.aspx?sourcedoc={371a2aba-3da4-4966-8d5a-e02eb2038845}&action=edit'
+                },
+                google: {
+                    view: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT-ASVIfFJ4HdqIjq-2fSar4taGxlUutrZCeH1dFgfT6o-baBFQHLtJcGwgretrT2NmqtbQe7FbmxiS/pubhtml?widget=true&headers=false',
+                    edit: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT-ASVIfFJ4HdqIjq-2fSar4taGxlUutrZCeH1dFgfT6o-baBFQHLtJcGwgretrT2NmqtbQe7FbmxiS/pubhtml?widget=true&headers=false'
+                },
+                docs: {
+                    view: 'https://docs.google.com/document/d/e/2PACX-1vQ2z_n6-egJOrvFLMXsIBWvhxoPg01fS2XMchIJ-993uqD9YbaNbw9H1ZTD09CzeZ-VetsRNML2p3qF/pub?embedded=true',
+                    edit: 'https://docs.google.com/document/d/1v8BQURR8F6yoVlxGMmjPE9hEJAsLyx7cjtjiNLiXkhk/edit?usp=sharing'
+                }
+            };
+
+            const documentFrame = document.getElementById('documentFrame');
+            const typeButtons = document.querySelectorAll('.doc-type-button');
+            const collapseButton = document.querySelector('.collapse-button');
+            const refreshButton = document.querySelector('.refresh-button');
+            const maximizeButton = document.querySelector('.maximize-button');
+            const documentContent = document.querySelector('.document-content');
+            const loadingOverlay = document.querySelector('.loading-overlay');
+
+            let activeType = 'excel';
+
+            // Initialize iframe source
+            documentFrame.src = DOCUMENT_URLS[activeType].view;
+
+            // Handle document type switching
+            typeButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const type = button.dataset.type;
+                    activeType = type;
+                    
+                    // Update active button
+                    typeButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+
+                    // Update iframe source
+                    documentFrame.src = DOCUMENT_URLS[type].view;
+                });
+            });
+
+            // Handle collapse/expand
+            collapseButton.addEventListener('click', () => {
+                documentContent.classList.toggle('collapsed');
+                // Update icon
+                const svg = collapseButton.querySelector('svg');
+                if (documentContent.classList.contains('collapsed')) {
+                    svg.innerHTML = '<polyline points="6 9 12 15 18 9"></polyline>';
+                } else {
+                    svg.innerHTML = '<polyline points="18 15 12 9 6 15"></polyline>';
+                }
+            });
+
+            // Handle refresh
+            refreshButton.addEventListener('click', () => {
+                loadingOverlay.classList.remove('hidden');
+                documentFrame.src = documentFrame.src;
+                setTimeout(() => {
+                    loadingOverlay.classList.add('hidden');
+                }, 1000);
+            });
+
+            // Handle maximize
+            maximizeButton.addEventListener('click', () => {
+                window.open(DOCUMENT_URLS[activeType].edit, '_blank');
+            });
+        });
+    </script>
+
+    <!-- Load the widget script -->
+    <script 
+        type="text/javascript"
+        src="https://elevenlabs.io/convai-widget/index.js"
+    ></script>
+
+    <!-- Add this just before the closing </body> tag, after all other elements -->
+    <footer class="footer">
+        <span>Amar Harolikar | Applied Gen AI for Data Science, Analytics and Business | </span>
+        <a href="https://tigzig.com" target="_blank" rel="noopener noreferrer">tigzig.com</a>
+    </footer>
+
+    <!-- Add this before the closing body tag -->
+    <div class="sample-data-section">
+        <h2>Sample Data Records</h2>
+        <div class="table-container">
+            <table class="sample-data-table">
+                <thead>
+                    <tr>
+                        <th>Match ID</th>
+                        <th>Season</th>
+                        <th>Start Date</th>
+                        <th>Venue</th>
+                        <th>Innings</th>
+                        <th>Ball</th>
+                        <th>Batting Team</th>
+                        <th>Bowling Team</th>
+                        <th>Striker</th>
+                        <th>Non Striker</th>
+                        <th>Bowler</th>
+                        <th>Runs Off Bat</th>
+                        <th>Extras</th>
+                        <th>Wides</th>
+                        <th>No Balls</th>
+                        <th>Byes</th>
+                        <th>Leg Byes</th>
+                        <th>Penalty</th>
+                        <th>Wicket Type</th>
+                        <th>Player Dismissed</th>
+                        <th>Other Wicket Type</th>
+                        <th>Other Player Dismissed</th>
+                    </tr>
+                </thead>
+                <tbody id="sampleDataBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Add this to your existing JavaScript
+        const sampleData = [
+            {
+                match_id: "1426620",
+                season: "2024/25",
+                start_date: "2024-12-05",
+                venue: "Allan Border Field, Brisbane",
+                innings: "1",
+                ball: "20.1",
+                batting_team: "India",
+                bowling_team: "Australia",
+                striker: "JI Rodrigues",
+                non_striker: "RM Ghosh",
+                bowler: "A Sutherland",
+                runs_off_bat: "0",
+                extras: "0",
+                wides: "0",
+                noballs: "0",
+                byes: "0",
+                legbyes: "0",
+                penalty: "0",
+                wicket_type: "",
+                player_dismissed: "",
+                other_wicket_type: "",
+                other_player_dismissed: ""
+            },
+            {
+                match_id: "1426620",
+                season: "2024/25",
+                start_date: "2024-12-05",
+                venue: "Allan Border Field, Brisbane",
+                innings: "1",
+                ball: "22.2",
+                batting_team: "India",
+                bowling_team: "Australia",
+                striker: "JI Rodrigues",
+                non_striker: "RM Ghosh",
+                bowler: "A Sutherland",
+                runs_off_bat: "4",
+                extras: "0",
+                wides: "0",
+                noballs: "0",
+                byes: "0",
+                legbyes: "0",
+                penalty: "0",
+                wicket_type: "",
+                player_dismissed: "",
+                other_wicket_type: "",
+                other_player_dismissed: ""
+            },
+            {
+                match_id: "1426620",
+                season: "2024/25",
+                start_date: "2024-12-05",
+                venue: "Allan Border Field, Brisbane",
+                innings: "1",
+                ball: "23.6",
+                batting_team: "India",
+                bowling_team: "Australia",
+                striker: "JI Rodrigues",
+                non_striker: "RM Ghosh",
+                bowler: "A King",
+                runs_off_bat: "2",
+                extras: "0",
+                wides: "0",
+                noballs: "0",
+                byes: "0",
+                legbyes: "0",
+                penalty: "0",
+                wicket_type: "",
+                player_dismissed: "",
+                other_wicket_type: "",
+                other_player_dismissed: ""
+            },
+            {
+                match_id: "1426620",
+                season: "2024/25",
+                start_date: "2024-12-05",
+                venue: "Allan Border Field, Brisbane",
+                innings: "1",
+                ball: "26.1",
+                batting_team: "India",
+                bowling_team: "Australia",
+                striker: "JI Rodrigues",
+                non_striker: "RM Ghosh",
+                bowler: "KJ Garth",
+                runs_off_bat: "0",
+                extras: "0",
+                wides: "0",
+                noballs: "0",
+                byes: "0",
+                legbyes: "0",
+                penalty: "0",
+                wicket_type: "bowled",
+                player_dismissed: "JI Rodrigues",
+                other_wicket_type: "",
+                other_player_dismissed: ""
+            },
+            {
+                match_id: "1426620",
+                season: "2024/25",
+                start_date: "2024-12-05",
+                venue: "Allan Border Field, Brisbane",
+                innings: "1",
+                ball: "27.2",
+                batting_team: "India",
+                bowling_team: "Australia",
+                striker: "RM Ghosh",
+                non_striker: "DB Sharma",
+                bowler: "A Gardner",
+                runs_off_bat: "1",
+                extras: "0",
+                wides: "0",
+                noballs: "0",
+                byes: "0",
+                legbyes: "0",
+                penalty: "0",
+                wicket_type: "run out",
+                player_dismissed: "DB Sharma",
+                other_wicket_type: "",
+                other_player_dismissed: ""
+            },
+            {
+                match_id: "1426620",
+                season: "2024/25",
+                start_date: "2024-12-05",
+                venue: "Allan Border Field, Brisbane",
+                innings: "1",
+                ball: "30.5",
+                batting_team: "India",
+                bowling_team: "Australia",
+                striker: "RM Ghosh",
+                non_striker: "SZ Thakor",
+                bowler: "ML Schutt",
+                runs_off_bat: "0",
+                extras: "0",
+                wides: "0",
+                noballs: "0",
+                byes: "0",
+                legbyes: "0",
+                penalty: "0",
+                wicket_type: "caught",
+                player_dismissed: "RM Ghosh",
+                other_wicket_type: "",
+                other_player_dismissed: ""
+            },
+            {
+                match_id: "1426620",
+                season: "2024/25",
+                start_date: "2024-12-05",
+                venue: "Allan Border Field, Brisbane",
+                innings: "2",
+                ball: "8.3",
+                batting_team: "Australia",
+                bowling_team: "India",
+                striker: "G Voll",
+                non_striker: "BL Mooney",
+                bowler: "Renuka Singh",
+                runs_off_bat: "0",
+                extras: "1",
+                wides: "0",
+                noballs: "0",
+                byes: "0",
+                legbyes: "1",
+                penalty: "0",
+                wicket_type: "",
+                player_dismissed: "",
+                other_wicket_type: "",
+                other_player_dismissed: ""
+            },
+            {
+                match_id: "1426620",
+                season: "2024/25",
+                start_date: "2024-12-05",
+                venue: "Allan Border Field, Brisbane",
+                innings: "2",
+                ball: "12.3",
+                batting_team: "Australia",
+                bowling_team: "India",
+                striker: "A Sutherland",
+                non_striker: "G Voll",
+                bowler: "TR Sadhu",
+                runs_off_bat: "1",
+                extras: "0",
+                wides: "0",
+                noballs: "0",
+                byes: "0",
+                legbyes: "0",
+                penalty: "0",
+                wicket_type: "",
+                player_dismissed: "",
+                other_wicket_type: "",
+                other_player_dismissed: ""
+            },
+            {
+                match_id: "1426620",
+                season: "2024/25",
+                start_date: "2024-12-05",
+                venue: "Allan Border Field, Brisbane",
+                innings: "2",
+                ball: "12.4",
+                batting_team: "Australia",
+                bowling_team: "India",
+                striker: "G Voll",
+                non_striker: "A Sutherland",
+                bowler: "TR Sadhu",
+                runs_off_bat: "4",
+                extras: "0",
+                wides: "0",
+                noballs: "0",
+                byes: "0",
+                legbyes: "0",
+                penalty: "0",
+                wicket_type: "",
+                player_dismissed: "",
+                other_wicket_type: "",
+                other_player_dismissed: ""
+            },
+            {
+                match_id: "1426620",
+                season: "2024/25",
+                start_date: "2024-12-05",
+                venue: "Allan Border Field, Brisbane",
+                innings: "2",
+                ball: "15.1",
+                batting_team: "Australia",
+                bowling_team: "India",
+                striker: "A Gardner",
+                non_striker: "G Voll",
+                bowler: "Priya Mishra",
+                runs_off_bat: "6",
+                extras: "0",
+                wides: "0",
+                noballs: "0",
+                byes: "0",
+                legbyes: "0",
+                penalty: "0",
+                wicket_type: "",
+                player_dismissed: "",
+                other_wicket_type: "",
+                other_player_dismissed: ""
+            },
+            {
+                match_id: "1426620",
+                season: "2024/25",
+                start_date: "2024-12-05",
+                venue: "Allan Border Field, Brisbane",
+                innings: "2",
+                ball: "15.2",
+                batting_team: "Australia",
+                bowling_team: "India",
+                striker: "A Gardner",
+                non_striker: "G Voll",
+                bowler: "Priya Mishra",
+                runs_off_bat: "1",
+                extras: "0",
+                wides: "0",
+                noballs: "0",
+                byes: "0",
+                legbyes: "0",
+                penalty: "0",
+                wicket_type: "",
+                player_dismissed: "",
+                other_wicket_type: "",
+                other_player_dismissed: ""
+            },
+            {
+                match_id: "1432228",
+                season: "2024/25",
+                start_date: "2024-12-04",
+                venue: "Diamond Oval, Kimberley",
+                innings: "1",
+                ball: "16.5",
+                batting_team: "England",
+                bowling_team: "South Africa",
+                striker: "A Capsey",
+                non_striker: "HC Knight",
+                bowler: "A Dercksen",
+                runs_off_bat: "0",
+                extras: "1",
+                wides: "1",
+                noballs: "0",
+                byes: "0",
+                legbyes: "0",
+                penalty: "0",
+                wicket_type: "",
+                player_dismissed: "",
+                other_wicket_type: "",
+                other_player_dismissed: ""
+            },
+            {
+                match_id: "1432228",
+                season: "2024/25",
+                start_date: "2024-12-04",
+                venue: "Diamond Oval, Kimberley",
+                innings: "1",
+                ball: "25.5",
+                batting_team: "England",
+                bowling_team: "South Africa",
+                striker: "CE Dean",
+                non_striker: "S Ecclestone",
+                bowler: "N Mlaba",
+                runs_off_bat: "0",
+                extras: "5",
+                wides: "5",
+                noballs: "0",
+                byes: "0",
+                legbyes: "0",
+                penalty: "0",
+                wicket_type: "",
+                player_dismissed: "",
+                other_wicket_type: "",
+                other_player_dismissed: ""
+            },
+            {
+                match_id: "1432228",
+                season: "2024/25",
+                start_date: "2024-12-04",
+                venue: "Diamond Oval, Kimberley",
+                innings: "1",
+                ball: "25.6",
+                batting_team: "England",
+                bowling_team: "South Africa",
+                striker: "CE Dean",
+                non_striker: "S Ecclestone",
+                bowler: "N Mlaba",
+                runs_off_bat: "0",
+                extras: "2",
+                wides: "2",
+                noballs: "0",
+                byes: "0",
+                legbyes: "0",
+                penalty: "0",
+                wicket_type: "",
+                player_dismissed: "",
+                other_wicket_type: "",
+                other_player_dismissed: ""
+            },
+            {
+                match_id: "1432228",
+                season: "2024/25",
+                start_date: "2024-12-04",
+                venue: "Diamond Oval, Kimberley",
+                innings: "1",
+                ball: "35.6",
+                batting_team: "England",
+                bowling_team: "South Africa",
+                striker: "L Filer",
+                non_striker: "CE Dean",
+                bowler: "A Dercksen",
+                runs_off_bat: "0",
+                extras: "1",
+                wides: "0",
+                noballs: "0",
+                byes: "0",
+                legbyes: "1",
+                penalty: "0",
+                wicket_type: "",
+                player_dismissed: "",
+                other_wicket_type: "",
+                other_player_dismissed: ""
+            },
+            {
+                match_id: "1426551",
+                season: "2024/25",
+                start_date: "2024-11-10",
+                venue: "Perth Stadium",
+                innings: "1",
+                ball: "22.6",
+                batting_team: "Australia",
+                bowling_team: "Pakistan",
+                striker: "A Zampa",
+                non_striker: "SA Abbott",
+                bowler: "Mohammad Hasnain",
+                runs_off_bat: "0",
+                extras: "1",
+                wides: "1",
+                noballs: "0",
+                byes: "0",
+                legbyes: "0",
+                penalty: "0",
+                wicket_type: "",
+                player_dismissed: "",
+                other_wicket_type: "",
+                other_player_dismissed: ""
+            },
+            {
+                match_id: "1426551",
+                season: "2024/25",
+                start_date: "2024-11-10",
+                venue: "Perth Stadium",
+                innings: "2",
+                ball: "17.1",
+                batting_team: "Pakistan",
+                bowling_team: "Australia",
+                striker: "Abdullah Shafique",
+                non_striker: "Saim Ayub",
+                bowler: "LR Morris",
+                runs_off_bat: "0",
+                extras: "0",
+                wides: "0",
+                noballs: "0",
+                byes: "0",
+                legbyes: "0",
+                penalty: "0",
+                wicket_type: "caught and bowled",
+                player_dismissed: "Abdullah Shafique",
+                other_wicket_type: "",
+                other_player_dismissed: ""
+            },
+            {
+                match_id: "1426551",
+                season: "2024/25",
+                start_date: "2024-11-10",
+                venue: "Perth Stadium",
+                innings: "2",
+                ball: "19.3",
+                batting_team: "Pakistan",
+                bowling_team: "Australia",
+                striker: "Mohammad Rizwan",
+                non_striker: "Babar Azam",
+                bowler: "LR Morris",
+                runs_off_bat: "0",
+                extras: "1",
+                wides: "0",
+                noballs: "0",
+                byes: "0",
+                legbyes: "1",
+                penalty: "0",
+                wicket_type: "",
+                player_dismissed: "",
+                other_wicket_type: "",
+                other_player_dismissed: ""
+            },
+            {
+                match_id: "1432228",
+                season: "2024/25",
+                start_date: "2024-12-04",
+                venue: "Diamond Oval, Kimberley",
+                innings: "2",
+                ball: "17.1",
+                batting_team: "South Africa",
+                bowling_team: "England",
+                striker: "L Wolvaardt",
+                non_striker: "A Dercksen",
+                bowler: "S Ecclestone",
+                runs_off_bat: "0",
+                extras: "5",
+                wides: "5",
+                noballs: "0",
+                byes: "0",
+                legbyes: "0",
+                penalty: "0",
+                wicket_type: "",
+                player_dismissed: "",
+                other_wicket_type: "",
+                other_player_dismissed: ""
+            },
+            {
+                match_id: "1432228",
+                season: "2024/25",
+                start_date: "2024-12-04",
+                venue: "Diamond Oval, Kimberley",
+                innings: "1",
+                ball: "32.2",
+                batting_team: "England",
+                bowling_team: "South Africa",
+                striker: "S Ecclestone",
+                non_striker: "CE Dean",
+                bowler: "N de Klerk",
+                runs_off_bat: "0",
+                extras: "1",
+                wides: "0",
+                noballs: "0",
+                byes: "0",
+                legbyes: "1",
+                penalty: "0",
+                wicket_type: "",
+                player_dismissed: "",
+                other_wicket_type: "",
+                other_player_dismissed: ""
+            },
+            {
+                match_id: "1426620",
+                season: "2024/25",
+                start_date: "2024-12-05",
+                venue: "Allan Border Field, Brisbane",
+                innings: "1",
+                ball: "17.1",
+                batting_team: "India",
+                bowling_team: "Australia",
+                striker: "JI Rodrigues",
+                non_striker: "H Kaur",
+                bowler: "A Gardner",
+                runs_off_bat: "0",
+                extras: "1",
+                wides: "0",
+                noballs: "0",
+                byes: "0",
+                legbyes: "1",
+                penalty: "0",
+                wicket_type: "",
+                player_dismissed: "",
+                other_wicket_type: "",
+                other_player_dismissed: ""
+            },
+            {
+                match_id: "1426620",
+                season: "2024/25",
+                start_date: "2024-12-05",
+                venue: "Allan Border Field, Brisbane",
+                innings: "1",
+                ball: "3.4",
+                batting_team: "India",
+                bowling_team: "Australia",
+                striker: "H Deol",
+                non_striker: "PS Punia",
+                bowler: "KJ Garth",
+                runs_off_bat: "0",
+                extras: "1",
+                wides: "0",
+                noballs: "0",
+                byes: "0",
+                legbyes: "1",
+                penalty: "0",
+                wicket_type: "",
+                player_dismissed: "",
+                other_wicket_type: "",
+                other_player_dismissed: ""
+            }
+
+        ];
+
+        // Function to render the sample data table
+        function renderSampleDataTable() {
+            const tbody = document.getElementById('sampleDataBody');
+            sampleData.forEach(record => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${record.match_id}</td>
+                    <td>${record.season}</td>
+                    <td>${record.start_date}</td>
+                    <td>${record.venue}</td>
+                    <td>${record.innings}</td>
+                    <td>${record.ball}</td>
+                    <td>${record.batting_team}</td>
+                    <td>${record.bowling_team}</td>
+                    <td>${record.striker}</td>
+                    <td>${record.non_striker}</td>
+                    <td>${record.bowler}</td>
+                    <td>${record.runs_off_bat}</td>
+                    <td>${record.extras}</td>
+                    <td>${record.wides}</td>
+                    <td>${record.noballs}</td>
+                    <td>${record.byes}</td>
+                    <td>${record.legbyes}</td>
+                    <td>${record.penalty}</td>
+                    <td>${record.wicket_type}</td>
+                    <td>${record.player_dismissed}</td>
+                    <td>${record.other_wicket_type}</td>
+                    <td>${record.other_player_dismissed}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Call the render function when the document is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            renderSampleDataTable();
+        });
+    </script>
+</body>
+</html> 
